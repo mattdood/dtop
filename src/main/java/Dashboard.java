@@ -42,10 +42,21 @@ public class Dashboard {
             Panel row1Panel = new Panel(new GridLayout(3));
             row1Panel.setLayoutManager(new LinearLayout(Direction.HORIZONTAL));
 
-            Panel dockerContainerPanel = new Panel(new GridLayout(1));
+//            Panel dockerContainerPanel = new Panel(new GridLayout(1));
+//            for (String key : this.dockerContainersMap.keySet()) {
+//                dockerContainerPanel.addComponent(new Label(this.dockerContainersMap.get(key).getNameOrId()));
+//            }
+
+            RadioBoxList<String> dockerContainerRadio = new RadioBoxList<>();
             for (String key : this.dockerContainersMap.keySet()) {
-                dockerContainerPanel.addComponent(new Label(this.dockerContainersMap.get(key).getNameOrId()));
+                dockerContainerRadio.addItem(this.dockerContainersMap.get(key).getNameOrId());
             }
+            dockerContainerRadio.addListener(new RadioBoxList.Listener() {
+                @Override
+                public void onSelectionChanged(int selectedIndex, int previousSelection) {
+
+                }
+            });
 
             Panel infoPanel = new Panel(new GridLayout(2));
             infoPanel.addComponent(new Label("Id: "));
@@ -97,7 +108,7 @@ public class Dashboard {
             managePanel.setPreferredSize(new TerminalSize(50, 2));
 
             // add components to row parent
-            row1Panel.addComponent(dockerContainerPanel.withBorder(Borders.singleLine("Containers: ")));
+            row1Panel.addComponent(dockerContainerRadio.withBorder(Borders.singleLine("Containers: ")));
             row1Panel.addComponent(infoPanel.withBorder(Borders.singleLine("Info: ")));
             row1Panel.addComponent(commandsPanel.withBorder(Borders.singleLine("Commands: ")));
 
