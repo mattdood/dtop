@@ -4,28 +4,28 @@ import com.spotify.docker.client.LogStream;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.Container;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Main {
 
     public static void main(String[] args) throws DockerException, InterruptedException {
 
         try {
-            final DockerClient docker = new DefaultDockerClient("unix:///var/run/docker.sock");
-            final List<Container> containers = docker.listContainers();
-            for (Container container : containers) {
-                System.out.println(container.id());
+            final DockerClient dockerClient = new DefaultDockerClient("unix:///var/run/docker.sock");
+            final List<Container> dockerContainers = dockerClient.listContainers();
+
+            Map<String, ContainerProps> dockerContainersMap = new HashMap<>();
+            for (Container container : dockerContainers) {
+                ContainerProps props = new ContainerProps(dockerClient, container);
+                dockerContainersMap.put(props.getId(), props);
             }
-            final String logs;
-            try (LogStream stream = docker.logs(containers.get(0).id(), DockerClient.LogsParam.stdout(), DockerClient.LogsParam.stderr())) {
-                logs = stream.readFully().toString();
-                System.out.println(logs);
-            }
+
+            Dashboard dash = new Dashboard(dockerContainersMap);
+            dash.drawScreen();
         }
-        catch (DockerException ex) {
-            System.out.println(ex.toString());
-        }
-        catch (InterruptedException ex) {
+        catch (DockerException | InterruptedException ex) {
             System.out.println(ex.toString());
         }
     }
