@@ -3,13 +3,27 @@ import com.googlecode.lanterna.TextColor;
 import com.googlecode.lanterna.gui2.*;
 import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
+import com.spotify.docker.client.DefaultDockerClient;
+import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.exceptions.DockerException;
+import com.spotify.docker.client.messages.Container;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 public class Dashboard {
 
+    private Map<String, ContainerProps> dockerContainersMap;
 
-    public static void main(String[] args) {
+    public Dashboard (Map<String, ContainerProps> dockerContainersMap) {
+        this.dockerContainersMap = dockerContainersMap;
+    }
+
+    public void drawScreen() throws DockerException, InterruptedException {
+
+        System.out.print("Here");
+
         DefaultTerminalFactory terminalFactory = new DefaultTerminalFactory();
         Screen screen = null;
 
@@ -29,12 +43,9 @@ public class Dashboard {
             row1Panel.setLayoutManager(new LinearLayout(Direction.HORIZONTAL));
 
             Panel dockerContainerPanel = new Panel(new GridLayout(1));
-            dockerContainerPanel.addComponent(new Label("example_container_name"));
-            dockerContainerPanel.addComponent(new Label("example_container_name"));
-            dockerContainerPanel.addComponent(new Label("example_container_name"));
-            dockerContainerPanel.addComponent(new Label("example_container_name"));
-            dockerContainerPanel.addComponent(new Label("example_container_name"));
-            dockerContainerPanel.addComponent(new Label("example_container_name"));
+            for (String key : this.dockerContainersMap.keySet()) {
+                dockerContainerPanel.addComponent(new Label(this.dockerContainersMap.get(key).getNameOrId()));
+            }
 
             Panel infoPanel = new Panel(new GridLayout(2));
             infoPanel.addComponent(new Label("Id: "));
@@ -120,6 +131,10 @@ public class Dashboard {
                 }
             }
         }
+    }
+
+    public static void main(String[] args) {
+
     }
 
 }
