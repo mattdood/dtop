@@ -57,7 +57,109 @@ public class Dashboard {
         this.logPanel.setText(containerProperties.getLogs());
     }
 
-    public void drawScreen() throws DockerException, InterruptedException {
+    private Panel initializeInfoPanel() {
+        Map<String, Label> infoMap = new HashMap<>();
+        infoMap.put("idLabel", new Label("Id: "));
+        infoMap.put("containerId", new Label("some-example-id-here"));
+        infoMap.put("namesLabel", new Label("names"));
+        infoMap.put("containerName", new Label("example_container_name"));
+        infoMap.put("imageLabel", new Label("Image: "));
+        infoMap.put("containerImage", new Label("example_container_image"));
+        infoMap.put("createdLabel", new Label("Created: "));
+        infoMap.put("containerCreated", new Label("2020-07-19T12:00.00Z01"));
+        infoMap.put("statusLabel", new Label("Status: "));
+        infoMap.put("containerStatus", new Label("Running"));
+        infoMap.put("PortsLabel", new Label("Ports: "));
+        infoMap.put("containerPorts", new Label("8080:8080"));
+
+        Panel infoPanel = new Panel(new GridLayout(2));
+        for (Label labelComponent : infoMap.values()) {
+            infoPanel.addComponent(labelComponent);
+        }
+        return infoPanel;
+    }
+
+    private MultiWindowTextGUI initializeTerminal() throws IOException {
+        DefaultTerminalFactory terminalFactory = new DefaultTerminalFactory();
+        Screen screen = null;
+        screen = terminalFactory.createScreen();
+        screen.startScreen();
+        return new MultiWindowTextGUI(screen, new DefaultWindowManager(), new EmptySpace(TextColor.ANSI.WHITE));
+    }
+
+    private Window initializeWindow() {
+        return new BasicWindow("dtop");
+    }
+
+    private void addComponentsToWindow(Window window) {
+        // screen container
+        Panel containerPanel = new Panel(new GridLayout(1));
+        containerPanel.setLayoutManager(new LinearLayout(Direction.VERTICAL));
+
+        // start of row 1
+        Panel row1Panel = new Panel(new GridLayout(3));
+        row1Panel.setLayoutManager(new LinearLayout(Direction.HORIZONTAL));
+
+        RadioBoxList<String> dockerContainerRadio = new RadioBoxList<>();
+        for (String key : this.dockerContainersMap.keySet()) {
+            dockerContainerRadio.addItem(this.dockerContainersMap.get(key).getNameOrId());
+        }
+        dockerContainerRadio.addListener(new RadioBoxList.Listener() {
+            @Override
+            public void onSelectionChanged(int selectedIndex, int previousSelection) {
+
+            }
+        });
+
+        Panel commandsPanel = new Panel(new GridLayout(2));
+        commandsPanel.addComponent(new Label("Stop"));
+        commandsPanel.addComponent(new Label("Restart"));
+        commandsPanel.addComponent(new Label("Kill"));
+        commandsPanel.addComponent(new Label("Pause"));
+        commandsPanel.addComponent(new Label("Down"));
+
+        // start of row 2
+        Panel row2Panel = new Panel(new GridLayout(2));
+        row2Panel.setLayoutManager(new LinearLayout(Direction.HORIZONTAL));
+
+        Panel row2Column2Panel = new Panel(new GridLayout(1));
+        row2Column2Panel.setLayoutManager(new LinearLayout(Direction.VERTICAL));
+
+        // start of row 3
+        Panel row3Panel = new Panel(new GridLayout(1));
+        row3Panel.setLayoutManager(new LinearLayout(Direction.HORIZONTAL));
+
+        Panel managePanel = new Panel(new GridLayout(2));
+        managePanel.addComponent(new Label("$ "));
+        final TextBox managementCommand = new TextBox().addTo(managePanel);
+        managePanel.setPreferredSize(new TerminalSize(50, 2));
+
+        // add components to row parent
+        row1Panel.addComponent(dockerContainerRadio.withBorder(Borders.singleLine("Containers: ")));
+        row1Panel.addComponent(infoPanel.withBorder(Borders.singleLine("Info: ")));
+        row1Panel.addComponent(commandsPanel.withBorder(Borders.singleLine("Commands: ")));
+
+        row2Column2Panel.addComponent(initializePanel(1, 50, 2, this.processesPanel).withBorder(Borders.singleLine("Processes: ")));
+        row2Column2Panel.addComponent(initializePanel(1, 50, 2, this.memoryPanel).withBorder(Borders.singleLine("Memory Usage: ")));
+        row2Column2Panel.addComponent(initializePanel(1, 50, 2, this.networkPanel).withBorder(Borders.singleLine("Network: ")));
+        row2Panel.addComponent(initializePanel(1, 50, 2, this.logPanel).withBorder(Borders.singleLine("Logs: ")));
+        row2Panel.addComponent(row2Column2Panel);
+
+        row3Panel.addComponent(managePanel.withBorder(Borders.singleLine("Manage: ")));
+
+        // add rows to container parent
+        containerPanel.addComponent(row1Panel);
+        containerPanel.addComponent(row2Panel);
+        containerPanel.addComponent(row3Panel);
+
+        window.setComponent(containerPanel);
+    }
+
+    private void refreshComponents() {
+
+    }
+
+    public WindowBasedTextGUI drawScreen() throws DockerException, InterruptedException {
 
         System.out.print("Here");
 
@@ -75,14 +177,10 @@ public class Dashboard {
             Panel containerPanel = new Panel(new GridLayout(1));
             containerPanel.setLayoutManager(new LinearLayout(Direction.VERTICAL));
 
+
             // start of row 1
             Panel row1Panel = new Panel(new GridLayout(3));
             row1Panel.setLayoutManager(new LinearLayout(Direction.HORIZONTAL));
-
-//            Panel dockerContainerPanel = new Panel(new GridLayout(1));
-//            for (String key : this.dockerContainersMap.keySet()) {
-//                dockerContainerPanel.addComponent(new Label(this.dockerContainersMap.get(key).getNameOrId()));
-//            }
 
             RadioBoxList<String> dockerContainerRadio = new RadioBoxList<>();
             for (String key : this.dockerContainersMap.keySet()) {
@@ -109,6 +207,9 @@ public class Dashboard {
             infoPanel.addComponent(new Label("Ports: "));
             infoPanel.addComponent(new Label("8080:8080"));
 
+            for (Component item: infoPanel.getChildrenList()) {
+                System.out.println(item.toString());
+            }
             Panel commandsPanel = new Panel(new GridLayout(2));
             commandsPanel.addComponent(new Label("Stop"));
             commandsPanel.addComponent(new Label("Restart"));
@@ -164,7 +265,7 @@ public class Dashboard {
 
             window.setComponent(containerPanel);
             textGUI.addWindowAndWait(window);
-
+            return textGUI;
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -179,6 +280,7 @@ public class Dashboard {
                 }
             }
         }
+        return textGUI;
     }
 
     public static void main(String[] args) {
