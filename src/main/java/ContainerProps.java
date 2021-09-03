@@ -7,6 +7,7 @@ import com.spotify.docker.client.messages.Container;
 
 public class ContainerProps {
     private DockerClient dockerClient = new DefaultDockerClient("unix:///var/run/docker.sock");
+    private Container dockerContainer;
     private String id;
     private ImmutableList<String> names;
     private String logs;
@@ -16,27 +17,39 @@ public class ContainerProps {
     private String ports;
 
     public ContainerProps(DockerClient dockerClient, Container container) {
+        this.dockerContainer = container;
         this.id = container.id();
         this.names = container.names();
+        this.image = container.image();
+        this.status = container.status();
+        this.created = container.created();
+        this.ports = container.portsAsString();
+        this.logs = pullLogs();
+    }
+
+    private String pullLogs() {
+        String logs = "";
+        try (LogStream stream = dockerClient.logs(this.id, DockerClient.LogsParam.stdout(), DockerClient.LogsParam.stderr())) {
+            logs = stream.readFully().toString();
+        } catch (DockerException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        return logs;
+    }
+
+    public void refresh() {
+        this.id = dockerContainer.id();
+        this.names = dockerContainer.names();
 
         try (LogStream stream = dockerClient.logs(this.id, DockerClient.LogsParam.stdout(), DockerClient.LogsParam.stderr())) {
             this.logs = stream.readFully().toString();
         } catch (DockerException | InterruptedException e) {
             e.printStackTrace();
         }
-        this.image = container.image();
-        this.status = container.status();
-        this.created = container.created();
-        this.ports = container.portsAsString();
-
-    }
-
-    private void refreshLogs() {
-        try (LogStream stream = this.dockerClient.logs(this.id, DockerClient.LogsParam.stdout(), DockerClient.LogsParam.stderr())) {
-            this.logs = stream.readFully().toString();
-        } catch (DockerException | InterruptedException e) {
-            e.printStackTrace();
-        }
+        this.image = dockerContainer.image();
+        this.status = dockerContainer.status();
+        this.created = dockerContainer.created();
+        this.ports = dockerContainer.portsAsString();
     }
 
     public String getId() {
@@ -51,6 +64,7 @@ public class ContainerProps {
     }
 
     public String getLogs() {
+        this.logs = pullLogs();
         return logs;
     }
 
