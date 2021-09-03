@@ -17,6 +17,7 @@ public class Dashboard {
     // window
     private WindowBasedTextGUI textGUI;
     private Window window;
+    private RadioBoxList radioBoxList;
     private Panel infoPanel;
     private Label logPanel;
     private Label memoryPanel;
@@ -26,14 +27,17 @@ public class Dashboard {
     public Dashboard (Map<String, ContainerProps> dockerContainersMap) throws DockerException, InterruptedException, IOException {
         this.dockerContainersMap = dockerContainersMap;
         this.window = initializeWindow();
+        this.radioBoxList = initializeRadioBox();
         this.infoPanel = initializeInfoPanel();
 
         // these are containing panels
-        this.logPanel = initializeLabel("");
-        this.memoryPanel = initializeLabel("");
-        this.networkPanel = initializeLabel("");
-        this.processesPanel = initializeLabel("");
+        this.logPanel = initializeLabel((String) this.radioBoxList.getCheckedItem());
+        this.memoryPanel = initializeLabel((String) this.radioBoxList.getCheckedItem());
+        this.networkPanel = initializeLabel((String) this.radioBoxList.getCheckedItem());
+        this.processesPanel = initializeLabel((String) this.radioBoxList.getCheckedItem());
         this.textGUI = initializeTerminal();
+        addComponentsToWindow();
+        this.textGUI.addWindowAndWait(this.window);
     }
 
     private Panel initializePanel(int columnCount, int columnsWidth, int rowsHeight, Label content) {
@@ -91,7 +95,24 @@ public class Dashboard {
         return new BasicWindow("dtop");
     }
 
-    private void addComponentsToWindow(Window window) {
+    private RadioBoxList<String> initializeRadioBox() {
+        RadioBoxList<String> dockerContainerRadio = new RadioBoxList<>();
+        for (String key : this.dockerContainersMap.keySet()) {
+            dockerContainerRadio.addItem(this.dockerContainersMap.get(key).getNameOrId());
+        }
+        dockerContainerRadio.setCheckedItemIndex(0);
+        dockerContainerRadio.addListener(new RadioBoxList.Listener() {
+            @Override
+            public void onSelectionChanged(int selectedIndex, int previousSelection) {
+                String selected = dockerContainerRadio.getCheckedItem();
+                ContainerProps selectedContainer = dockerContainersMap.get(selected);
+                refreshComponents(selectedContainer);
+            }
+        });
+        return dockerContainerRadio;
+    }
+
+    private void addComponentsToWindow() {
         // screen container
         Panel containerPanel = new Panel(new GridLayout(1));
         containerPanel.setLayoutManager(new LinearLayout(Direction.VERTICAL));
@@ -99,17 +120,6 @@ public class Dashboard {
         // start of row 1
         Panel row1Panel = new Panel(new GridLayout(3));
         row1Panel.setLayoutManager(new LinearLayout(Direction.HORIZONTAL));
-
-        RadioBoxList<String> dockerContainerRadio = new RadioBoxList<>();
-        for (String key : this.dockerContainersMap.keySet()) {
-            dockerContainerRadio.addItem(this.dockerContainersMap.get(key).getNameOrId());
-        }
-        dockerContainerRadio.addListener(new RadioBoxList.Listener() {
-            @Override
-            public void onSelectionChanged(int selectedIndex, int previousSelection) {
-
-            }
-        });
 
         Panel commandsPanel = new Panel(new GridLayout(2));
         commandsPanel.addComponent(new Label("Stop"));
@@ -135,8 +145,8 @@ public class Dashboard {
         managePanel.setPreferredSize(new TerminalSize(50, 2));
 
         // add components to row parent
-        row1Panel.addComponent(dockerContainerRadio.withBorder(Borders.singleLine("Containers: ")));
-        row1Panel.addComponent(infoPanel.withBorder(Borders.singleLine("Info: ")));
+        row1Panel.addComponent(this.radioBoxList.withBorder(Borders.singleLine("Containers: ")));
+        row1Panel.addComponent(this.infoPanel.withBorder(Borders.singleLine("Info: ")));
         row1Panel.addComponent(commandsPanel.withBorder(Borders.singleLine("Commands: ")));
 
         row2Column2Panel.addComponent(initializePanel(1, 50, 2, this.processesPanel).withBorder(Borders.singleLine("Processes: ")));
@@ -152,10 +162,10 @@ public class Dashboard {
         containerPanel.addComponent(row2Panel);
         containerPanel.addComponent(row3Panel);
 
-        window.setComponent(containerPanel);
+        this.window.setComponent(containerPanel);
     }
 
-    private void refreshComponents() {
+    private void refreshComponents(ContainerProps selectedContainer) {
 
     }
 

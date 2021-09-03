@@ -24,7 +24,6 @@ public class Main {
             }
 
             Dashboard dash = new Dashboard(dockerContainersMap);
-            dash.drawScreen();
         }
         catch (DockerException | InterruptedException | IOException ex) {
             System.out.println(ex.toString());
