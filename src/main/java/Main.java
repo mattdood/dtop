@@ -4,6 +4,7 @@ import com.spotify.docker.client.LogStream;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.Container;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +26,7 @@ public class Main {
             Dashboard dash = new Dashboard(dockerContainersMap);
             dash.drawScreen();
         }
-        catch (DockerException | InterruptedException ex) {
+        catch (DockerException | InterruptedException | IOException ex) {
             System.out.println(ex.toString());
         }
     }
