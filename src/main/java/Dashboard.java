@@ -1,23 +1,60 @@
+import com.fasterxml.jackson.databind.introspect.TypeResolutionContext;
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.TextColor;
 import com.googlecode.lanterna.gui2.*;
 import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
-import com.spotify.docker.client.DefaultDockerClient;
-import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
-import com.spotify.docker.client.messages.Container;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
 public class Dashboard {
 
     private Map<String, ContainerProps> dockerContainersMap;
+    // terminal
+    // window
+    private WindowBasedTextGUI textGUI;
+    private Window window;
+    private Panel infoPanel;
+    private Label logPanel;
+    private Label memoryPanel;
+    private Label networkPanel;
+    private Label processesPanel;
 
-    public Dashboard (Map<String, ContainerProps> dockerContainersMap) {
+    public Dashboard (Map<String, ContainerProps> dockerContainersMap) throws DockerException, InterruptedException, IOException {
         this.dockerContainersMap = dockerContainersMap;
+        this.window = initializeWindow();
+        this.infoPanel = initializeInfoPanel();
+
+        // these are containing panels
+        this.logPanel = initializeLabel("");
+        this.memoryPanel = initializeLabel("");
+        this.networkPanel = initializeLabel("");
+        this.processesPanel = initializeLabel("");
+        this.textGUI = initializeTerminal();
+    }
+
+    private Panel initializePanel(int columnCount, int columnsWidth, int rowsHeight, Label content) {
+        Panel initializedPanel = new Panel(new GridLayout(columnCount));
+        initializedPanel.setPreferredSize(new TerminalSize(columnsWidth, rowsHeight));
+        initializedPanel.addComponent(content);
+        return initializedPanel;
+    }
+
+    private Label initializeLabel(String content) {
+        Label initializedLabel = new Label(content);
+        return initializedLabel;
+    }
+
+    private void updateLogLabel(Label label, String dockerContainerId) {
+        RadioBoxList<String> dockerContainerRadio = new RadioBoxList<>();
+        for (String key : this.dockerContainersMap.keySet()) {
+            dockerContainerRadio.addItem(this.dockerContainersMap.get(key).getNameOrId());
+        }
+        ContainerProps containerProperties = this.dockerContainersMap.get(dockerContainerId);
+        this.logPanel.setText(containerProperties.getLogs());
     }
 
     public void drawScreen() throws DockerException, InterruptedException {
